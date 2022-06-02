@@ -112,7 +112,7 @@ public class ResidentIDPConfigsTestCase extends ISIntegrationTest {
                         "Expected Security Token Service URL is not found"},
                 {"carbon.super", "OIDCWebFingerEPUrl", "https://localhost:9853/.well-known/webfinger",
                         "Expected Web finger Endpoint URL is not found"},
-                {"carbon.super", "IdPEntityId", "https://localhost:9853/oauth2/token",
+                {"carbon.super", "IdPEntityId", "https://localhost:9443/oauth2/token",
                         "Expected Token Endpoint URL is not found"},
                 {"carbon.super", "OIDCCheckSessionEPUrl", "https://localhost:9853/oidc/checksession",
                         "Expected Session IFrame Endpoint URL is not found"},

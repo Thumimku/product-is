@@ -48,7 +48,7 @@ public class OIDCMetadataTest extends ISIntegrationTest {
     private static final String INTROSPECTION_ENDPOINT_SUPER_TENANT = "https://localhost:9853/oauth2/introspect";
     private static final String INTROSPECTION_ENDPOINT_TENANT = "https://localhost:9853/t/wso2.com/oauth2/introspect";
     private static final String CHECK_SESSION_IFRAME = "https://localhost:9853/oidc/checksession";
-    private static final String ISSUER = "https://localhost:9853/oauth2/token";
+    private static final String ISSUER = "https://localhost:9443/oauth2/token";
     private static final String AUTHORIZATION_ENDPOINT = "https://localhost:9853/oauth2/authorize";
     private static final String TOKEN_ENDPOINT = "https://localhost:9853/oauth2/token";
     private static final String END_SESSION_ENDPOINT = "https://localhost:9853/oidc/logout";

@@ -1933,7 +1933,21 @@
                 <groupId>io.rest-assured</groupId>
                 <artifactId>rest-assured</artifactId>
                 <version>${rest.assured.version}</version>
-                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.rest-assured</groupId>
+                <artifactId>json-path</artifactId>
+                <version>${rest.assured.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.rest-assured</groupId>
+                <artifactId>xml-path</artifactId>
+                <version>${rest.assured.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.rest-assured</groupId>
+                <artifactId>rest-assured-all</artifactId>
+                <version>${rest.assured.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.swagger</groupId>
@@ -2329,7 +2343,7 @@
         <apache.openejb.version>4.5.2</apache.openejb.version>
         <nimbus.oidc.sdk.version>6.13</nimbus.oidc.sdk.version>
         <!--Rest API test -->
-        <rest.assured.version>4.1.2</rest.assured.version>
+        <rest.assured.version>5.0.0</rest.assured.version>
         <swagger-core-version>1.5.22</swagger-core-version>
         <swagger-request-validator.version>2.6.0</swagger-request-validator.version>
         <!--UI Cypress test -->

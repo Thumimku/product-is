@@ -28,6 +28,12 @@
           "description": "Enable to send OTP in verification e-mail instead of confirmation code."
         },
         {
+          "name": "SelfRegistration.EmailOTP.Enable",
+          "value": "false",
+          "displayName": "Enable email OTP",
+          "description": "Enable to send email OTP for self registration."
+        },
+        {
           "name": "SelfRegistration.OTP.UseUppercaseCharactersInOTP",
           "value": "true",
           "displayName": "Include uppercase characters in OTP",
@@ -56,6 +62,12 @@
           "value": "false",
           "displayName": "Enable Account Confirmation On Creation",
           "description": "Enable user account confirmation when the user account is not locked on creation"
+        },
+        {
+          "name": "SelfRegistration.ShowUsernameUnavailability",
+          "value": "true",
+          "displayName": "Show username unavailability",
+          "description": "Show a descriptive error message to the user if the username is already taken. However, this may lead to username enumeration"
         },
         {
           "name": "SelfRegistration.Notification.InternallyManage",
@@ -178,6 +190,24 @@
           "value": "false",
           "displayName": "Send OTP in e-mail",
           "description": "Enable to send OTP in verification e-mail instead of confirmation code."
+        },
+        {
+          "name": "EmailVerification.OTP",
+          "value": "false",
+          "displayName": "Send OTP in e-mail",
+          "description": "Enable to send OTP to verify email."
+        },
+        {
+          "name": "EmailVerification.AskPassword.EmailOTP",
+          "value": "false",
+          "displayName": "Send email OTP to setup the password",
+          "description": "Enable to send email OTP to setup the password."
+        },
+        {
+          "name": "EmailVerification.AskPassword.SMSOTP",
+          "value": "false",
+          "displayName": "Send SMS OTP to setup the password",
+          "description": "Enable to send SMS OTP to setup the password."
         },
         {
           "name": "EmailVerification.OTP.UseUppercaseCharactersInOTP",

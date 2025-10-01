@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2024, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2019-2025, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -264,6 +264,23 @@ public class RESTTestBase extends ISIntegrationTest {
 
     /**
      * Invoke given endpointUri for GET with Basic authentication, authentication credential being the
+     * authenticatingUserName and authenticatingCredential with no filter.
+     *
+     * @param endpointUri endpoint to be invoked
+     * @return response of GET
+     */
+    protected Response getResponseOfGetNoFilter(String endpointUri) {
+
+        return given().auth().preemptive().basic(authenticatingUserName, authenticatingCredential)
+                .contentType(ContentType.JSON)
+                .header(HttpHeaders.ACCEPT, ContentType.JSON)
+                .log().ifValidationFails()
+                .when()
+                .get(endpointUri);
+    }
+
+    /**
+     * Invoke given endpointUri for GET with Basic authentication, authentication credential being the
      * authenticatingUserName and authenticatingCredential
      *
      * @param endpointUri endpoint to be invoked
@@ -339,6 +356,24 @@ public class RESTTestBase extends ISIntegrationTest {
     }
 
     /**
+     * Invoke given endpointURL with params for GET with OAuth2 authentication, using the provided token.
+     *
+     * @param endpointURL Endpoint to be invoked.
+     * @param accessToken OAuth2 access token.
+     * @param queryParams request query parameters
+     * @return Response.
+     */
+    protected Response getResponseOfGetWithOAuth2(String endpointURL, String accessToken,
+                                                  Map<String, Object> queryParams) {
+
+        return given().auth().preemptive().oauth2(accessToken)
+                .header(HttpHeaders.ACCEPT, ContentType.JSON)
+                .queryParams(queryParams)
+                .when()
+                .get(endpointURL);
+    }
+
+    /**
      * Invoke given endpointUri for GET without authentication.
      *
      * @param endpointUri endpoint to be invoked
@@ -374,6 +409,27 @@ public class RESTTestBase extends ISIntegrationTest {
                 .body(body)
                 .log().ifValidationFails()
                 .filter(validationFilter)
+                .log().ifValidationFails()
+                .when()
+                .log().ifValidationFails()
+                .post(endpointUri);
+    }
+
+    /**
+     * Invoke given endpointUri for POST with given body and Basic authentication, authentication credential being the
+     * authenticatingUserName and authenticatingCredential.
+     * This implementation does not incorporate any additional filters.
+     *
+     * @param endpointUri endpoint to be invoked
+     * @param body        payload
+     * @return response
+     */
+    protected Response getResponseOfPostNoFilter(String endpointUri, String body) {
+
+        return given().auth().preemptive().basic(authenticatingUserName, authenticatingCredential)
+                .contentType(ContentType.JSON)
+                .header(HttpHeaders.ACCEPT, ContentType.JSON)
+                .body(body)
                 .log().ifValidationFails()
                 .when()
                 .log().ifValidationFails()
@@ -656,6 +712,27 @@ public class RESTTestBase extends ISIntegrationTest {
     /**
      * Invoke given endpointUri for PUT with given body and Basic authentication, authentication credential being the
      * authenticatingUserName and authenticatingCredential
+     * This implementation does not incorporate any additional filters.
+     *
+     * @param endpointUri endpoint to be invoked
+     * @param body        payload
+     * @return response
+     */
+    protected Response getResponseOfPutWithNoFilter(String endpointUri, String body) {
+
+        return given().auth().preemptive().basic(authenticatingUserName, authenticatingCredential)
+                .contentType(ContentType.JSON)
+                .header(HttpHeaders.ACCEPT, ContentType.JSON)
+                .body(body)
+                .log().ifValidationFails()
+                .when()
+                .log().ifValidationFails()
+                .put(endpointUri);
+    }
+
+    /**
+     * Invoke given endpointUri for PUT with given body and Basic authentication, authentication credential being the
+     * authenticatingUserName and authenticatingCredential
      *
      * @param endpointUri ndpoint to be invoked
      * @param body        payload
@@ -694,6 +771,24 @@ public class RESTTestBase extends ISIntegrationTest {
                 .body(body)
                 .when()
                 .put(endpointURL);
+    }
+
+    /**
+     * Invoke the given endpointURL for PATCH with the provided body and OAuth2 authentication, using the provided
+     * access token.
+     *
+     * @param endpointURL Endpoint to be invoked.
+     * @param body Payload.
+     * @param accessToken OAuth2 access token.
+     * @return Response.
+     */
+    protected Response getResponseOfPatchWithOAuth2(String endpointURL, String body, String accessToken) {
+
+        return given().auth().preemptive().oauth2(accessToken)
+                .contentType(ContentType.JSON)
+                .body(body)
+                .when()
+                .patch(endpointURL);
     }
 
     /**
@@ -798,6 +893,22 @@ public class RESTTestBase extends ISIntegrationTest {
         return given().auth().preemptive().basic(authenticatingUserName, authenticatingCredential)
                 .contentType(ContentType.JSON)
                 .headers(headers)
+                .when()
+                .delete(endpointURI);
+    }
+
+    /**
+     * Invoke given endpointURI for DELETE with Basic authentication, authentication credential being the
+     * authenticatingUserName and authenticatingCredential with query parameters.
+     *
+     * @param endpointURI Endpoint to be invoked.
+     * @param queryParams Query parameters to be passed.
+     * @return Response.
+     */
+    protected Response getResponseOfDeleteWithQueryParams(String endpointURI, Map<String, Object> queryParams) {
+
+        return given().auth().preemptive().basic(authenticatingUserName, authenticatingCredential)
+                .queryParams(queryParams)
                 .when()
                 .delete(endpointURI);
     }

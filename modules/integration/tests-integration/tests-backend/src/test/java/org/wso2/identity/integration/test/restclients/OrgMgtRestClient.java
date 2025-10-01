@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2024-2025, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -42,6 +42,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -55,6 +56,7 @@ import org.wso2.identity.integration.test.utils.OAuth2Constant;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -70,8 +72,14 @@ public class OrgMgtRestClient extends RestBaseClient {
     private static final String APPLICATION_MANAGEMENT_PATH = "/applications";
     private static final String ORGANIZATION_MANAGEMENT_PATH = "/organizations";
     private static final String API_RESOURCE_MANAGEMENT_PATH = "/api-resources";
+    private static final String SELF_PATH = "/self";
     private static final String AUTHORIZED_APIS_PATH = "/authorized-apis";
     private static final String B2B_APP_NAME = "b2b-app";
+    private static final String API_RESOURCES = "apiResources";
+    private static final String ID = "id";
+    private static final String POLICY_IDENTIFIER = "policyIdentifier";
+    private static final String RBAC_POLICY = "RBAC";
+    private static final String SCOPES = "scopes";
 
     private final OAuth2RestClient oAuth2RestClient;
     private final Tenant tenantInfo;
@@ -118,7 +126,26 @@ public class OrgMgtRestClient extends RestBaseClient {
     public String addOrganization(String orgName) throws Exception {
 
         String m2mToken = getM2MAccessToken();
-        String body = buildOrgCreationRequestBody(orgName, null);
+        String body = buildOrgCreationRequestBody(orgName, null, null);
+        try (CloseableHttpResponse response = getResponseOfHttpPost(organizationManagementApiBasePath, body,
+                getHeadersWithBearerToken(m2mToken))) {
+            String[] locationElements = response.getHeaders(LOCATION_HEADER)[0].toString().split(PATH_SEPARATOR);
+            return locationElements[locationElements.length - 1];
+        }
+    }
+
+    /**
+     * Add an organization with an organization handle within the root organization.
+     *
+     * @param orgName   Name of the organization.
+     * @param orgHandle Handle of the organization.
+     * @return ID of the created organization.
+     * @throws Exception If an error occurs while creating the organization.
+     */
+    public String addOrganization(String orgName, String orgHandle) throws Exception {
+
+        String m2mToken = getM2MAccessToken();
+        String body = buildOrgCreationRequestBody(orgName, null, orgHandle);
         try (CloseableHttpResponse response = getResponseOfHttpPost(organizationManagementApiBasePath, body,
                 getHeadersWithBearerToken(m2mToken))) {
             String[] locationElements = response.getHeaders(LOCATION_HEADER)[0].toString().split(PATH_SEPARATOR);
@@ -137,7 +164,7 @@ public class OrgMgtRestClient extends RestBaseClient {
     public String addSubOrganization(String orgName, String parentOrgId) throws Exception {
 
         String m2mToken = switchM2MToken(parentOrgId);
-        String body = buildOrgCreationRequestBody(orgName, parentOrgId);
+        String body = buildOrgCreationRequestBody(orgName, parentOrgId, null);
         try (CloseableHttpResponse response = getResponseOfHttpPost(subOrganizationManagementApiBasePath, body,
                 getHeadersWithBearerToken(m2mToken))) {
             String[] locationElements = response.getHeaders(LOCATION_HEADER)[0].toString().split(PATH_SEPARATOR);
@@ -233,6 +260,75 @@ public class OrgMgtRestClient extends RestBaseClient {
         return (String) responseJSONBody.get(OAuth2Constant.ACCESS_TOKEN);
     }
 
+    /**
+     * Authorize the given API for the B2B application.
+     * Note: Use this method only for api resources in which api resource identifier cannot be used for filtering.
+     * For other APIs, authorize APIs using {@link #OrgMgtRestClient(AutomationContext, Tenant, String, JSONObject)}.
+     *
+     * @param apiName Name of the API.
+     * @param type    Type of the API.
+     * @param scopes  Scopes to be authorized.
+     * @throws Exception If an error occurs while authorizing the API.
+     */
+    public void authorizeAPIForB2BApp(String apiName, String type, List<String> scopes) throws Exception {
+
+        String apiUUID;
+        try (CloseableHttpResponse apiResourceResponse = getResponseOfHttpGet(
+                apiResourceManagementApiBasePath + "?filter=name+eq+" + URLEncoder.encode(apiName) + "+and+type+eq+" +
+                        type,
+                getHeaders())) {
+            JSONObject apiResourceResponseBody =
+                    new JSONObject(EntityUtils.toString(apiResourceResponse.getEntity()));
+            apiUUID = apiResourceResponseBody.getJSONArray(API_RESOURCES).getJSONObject(0).getString(ID);
+        }
+
+        JSONArray requiredScopes = new JSONArray();
+        scopes.forEach(requiredScopes::put);
+
+        JSONObject authorizedAPIRequestBody = new JSONObject();
+        authorizedAPIRequestBody.put(ID, apiUUID);
+        authorizedAPIRequestBody.put(POLICY_IDENTIFIER, RBAC_POLICY);
+        authorizedAPIRequestBody.put(SCOPES, requiredScopes);
+
+        try (CloseableHttpResponse appAuthorizedAPIsResponse = getResponseOfHttpPost(
+                applicationManagementApiBasePath + PATH_SEPARATOR + b2bAppId + AUTHORIZED_APIS_PATH,
+                authorizedAPIRequestBody.toString(), getHeaders())) {
+            assertEquals(appAuthorizedAPIsResponse.getStatusLine().getStatusCode(), HttpStatus.SC_OK,
+                    String.format("API authorization failed for the application with ID: %s for API: %s.",
+                            b2bAppId, apiName));
+        }
+    }
+
+    /**
+     * Update the version of the carbon.super organization.
+     *
+     * @param newVersion New version to be set for the organization.
+     * @throws Exception If an error occurs while updating the organization version.
+     */
+    public void updateOrganizationVersion(String newVersion) throws Exception {
+
+        String endpointUrl = organizationManagementApiBasePath + SELF_PATH;
+        String m2mToken = getM2MAccessToken();
+        JSONArray requestBody = buildOrganizationVersionUpdateRequestBody(newVersion);
+
+        try (CloseableHttpResponse response = getResponseOfHttpPatch(endpointUrl,
+                requestBody.toString(), getHeadersWithBearerToken(m2mToken))) {
+            assertEquals(response.getStatusLine().getStatusCode(), HttpStatus.SC_OK,
+                    "Organization version update failed for the carbon.super organization.");
+        }
+    }
+
+    private JSONArray buildOrganizationVersionUpdateRequestBody(String newVersion) throws Exception {
+
+        JSONArray orgVersionUpdateRequestBody = new JSONArray();
+        JSONObject organizationVersionUpdateRequest = new JSONObject();
+        organizationVersionUpdateRequest.put("operation", "REPLACE");
+        organizationVersionUpdateRequest.put("path", "/version");
+        organizationVersionUpdateRequest.put("value", newVersion);
+        orgVersionUpdateRequestBody.put(organizationVersionUpdateRequest);
+        return orgVersionUpdateRequestBody;
+    }
+
     private void createB2BApplication(JSONObject authorizedAPIs)
             throws IOException, JSONException, InterruptedException {
 
@@ -269,13 +365,13 @@ public class OrgMgtRestClient extends RestBaseClient {
                     getHeaders())) {
                 JSONObject apiResourceResponseBody =
                         new JSONObject(EntityUtils.toString(apiResourceResponse.getEntity()));
-                apiUUID = apiResourceResponseBody.getJSONArray("apiResources").getJSONObject(0).getString("id");
+                apiUUID = apiResourceResponseBody.getJSONArray(API_RESOURCES).getJSONObject(0).getString(ID);
             }
 
             JSONObject authorizedAPIRequestBody = new JSONObject();
-            authorizedAPIRequestBody.put("id", apiUUID);
-            authorizedAPIRequestBody.put("policyIdentifier", "RBAC");
-            authorizedAPIRequestBody.put("scopes", requiredScopes);
+            authorizedAPIRequestBody.put(ID, apiUUID);
+            authorizedAPIRequestBody.put(POLICY_IDENTIFIER, RBAC_POLICY);
+            authorizedAPIRequestBody.put(SCOPES, requiredScopes);
 
             try (CloseableHttpResponse appAuthorizedAPIsResponse = getResponseOfHttpPost(
                     applicationManagementApiBasePath + PATH_SEPARATOR + b2bAppId + AUTHORIZED_APIS_PATH,
@@ -303,12 +399,16 @@ public class OrgMgtRestClient extends RestBaseClient {
         return b2bSelfServiceApp.toString();
     }
 
-    private String buildOrgCreationRequestBody(String orgName, String parentOrgId) throws JSONException {
+    private String buildOrgCreationRequestBody(String orgName, String parentOrgId, String orgHandle)
+            throws JSONException {
 
         JSONObject organization = new JSONObject();
         organization.put("name", orgName);
         if (StringUtils.isNotBlank(parentOrgId)) {
             organization.put("parentId", parentOrgId);
+        }
+        if (StringUtils.isNotBlank(orgHandle)) {
+            organization.put("orgHandle", orgHandle);
         }
         return organization.toString();
     }

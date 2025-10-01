@@ -25,7 +25,6 @@ import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -41,7 +40,6 @@ import org.testng.annotations.Factory;
 import org.testng.annotations.Test;
 import org.wso2.carbon.automation.engine.context.AutomationContext;
 import org.wso2.carbon.automation.engine.context.TestUserMode;
-import org.wso2.carbon.integration.common.utils.LoginLogoutClient;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import org.wso2.identity.integration.common.clients.claim.metadata.mgt.ClaimMetadataManagementServiceClient;
 import org.wso2.identity.integration.common.utils.ISIntegrationTest;
@@ -50,8 +48,9 @@ import java.io.IOException;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 import static org.wso2.identity.integration.test.scim2.SCIM2BaseTestCase.EMAILS_ATTRIBUTE;
+import static org.wso2.identity.integration.test.scim2.SCIM2BaseTestCase.EMAIL_ADDRESSES_ATTRIBUTE;
 import static org.wso2.identity.integration.test.scim2.SCIM2BaseTestCase.EMAIL_TYPE_HOME_ATTRIBUTE;
 import static org.wso2.identity.integration.test.scim2.SCIM2BaseTestCase.EMAIL_TYPE_WORK_ATTRIBUTE;
 import static org.wso2.identity.integration.test.scim2.SCIM2BaseTestCase.ERROR_SCHEMA;
@@ -69,6 +68,7 @@ import static org.wso2.identity.integration.test.scim2.SCIM2BaseTestCase.SCIM_RE
 import static org.wso2.identity.integration.test.scim2.SCIM2BaseTestCase.SERVER_URL;
 import static org.wso2.identity.integration.test.scim2.SCIM2BaseTestCase.TYPE_PARAM;
 import static org.wso2.identity.integration.test.scim2.SCIM2BaseTestCase.USER_NAME_ATTRIBUTE;
+import static org.wso2.identity.integration.test.scim2.SCIM2BaseTestCase.USER_SYSTEM_SCHEMA;
 import static org.wso2.identity.integration.test.scim2.SCIM2BaseTestCase.VALUE_PARAM;
 
 public class SCIM2UserTestCase extends ISIntegrationTest {
@@ -90,7 +90,6 @@ public class SCIM2UserTestCase extends ISIntegrationTest {
 
     private CloseableHttpClient client;
 
-
     private static final String EQUAL = "+Eq+";
     private static final String STARTWITH = "+Sw+";
     private static final String ENDWITH = "+Ew+";
@@ -98,6 +97,7 @@ public class SCIM2UserTestCase extends ISIntegrationTest {
 
     @BeforeClass(alwaysRun = true)
     public void testInit() throws Exception {
+
         super.init();
         client = HttpClients.createDefault();
     }
@@ -120,6 +120,7 @@ public class SCIM2UserTestCase extends ISIntegrationTest {
 
     @DataProvider(name = "SCIM2UserConfigProvider")
     public static Object[][] sCIM2UserConfigProvider() {
+
         return new Object[][]{
                 {TestUserMode.SUPER_TENANT_ADMIN},
                 {TestUserMode.TENANT_ADMIN}
@@ -128,6 +129,7 @@ public class SCIM2UserTestCase extends ISIntegrationTest {
 
     @Test
     public void testCreateUser() throws Exception {
+
         HttpPost request = new HttpPost(getPath());
         request.addHeader(HttpHeaders.AUTHORIZATION, getAuthzHeader());
         request.addHeader(HttpHeaders.CONTENT_TYPE, "application/json");
@@ -159,6 +161,13 @@ public class SCIM2UserTestCase extends ISIntegrationTest {
         rootObject.put(EMAILS_ATTRIBUTE, emails);
 
         rootObject.put(PASSWORD_ATTRIBUTE, PASSWORD);
+
+        JSONArray emailAddresses = new JSONArray();
+        emailAddresses.add(EMAIL_TYPE_WORK_CLAIM_VALUE);
+        emailAddresses.add(EMAIL_TYPE_HOME_CLAIM_VALUE);
+        JSONObject emailAddressesObject = new JSONObject();
+        emailAddressesObject.put(EMAIL_ADDRESSES_ATTRIBUTE, emailAddresses);
+        rootObject.put(USER_SYSTEM_SCHEMA, emailAddressesObject);
 
         StringEntity entity = new StringEntity(rootObject.toString());
         request.setEntity(entity);
@@ -243,6 +252,7 @@ public class SCIM2UserTestCase extends ISIntegrationTest {
 
     @Test
     public void testAddUserFailure() throws Exception {
+
         HttpPost request = new HttpPost(getPath());
         request.addHeader(HttpHeaders.AUTHORIZATION, getAuthzHeader());
         request.addHeader(HttpHeaders.CONTENT_TYPE, "application/json");
@@ -267,7 +277,7 @@ public class SCIM2UserTestCase extends ISIntegrationTest {
 
         LOG.info("Response of testAddUserFailure method:" + responseObj.toString());
 
-        JSONArray schemasArray = (JSONArray)((JSONObject) responseObj).get("schemas");
+        JSONArray schemasArray = (JSONArray) ((JSONObject) responseObj).get("schemas");
         Assert.assertNotNull(schemasArray);
         Assert.assertEquals(schemasArray.size(), 1);
         Assert.assertEquals(schemasArray.get(0).toString(), ERROR_SCHEMA);
@@ -275,6 +285,7 @@ public class SCIM2UserTestCase extends ISIntegrationTest {
 
     @Test(dependsOnMethods = "testCreateUser")
     public void testGetUser() throws Exception {
+
         String userResourcePath = getPath() + "/" + userId;
         HttpGet request = new HttpGet(userResourcePath);
         request.addHeader(HttpHeaders.AUTHORIZATION, getAuthzHeader());
@@ -301,9 +312,11 @@ public class SCIM2UserTestCase extends ISIntegrationTest {
         validateFilteredUser(USER_NAME_ATTRIBUTE, CONTAINS, USERNAME.substring(2, 4));
         validateFilteredUser(USER_NAME_ATTRIBUTE, STARTWITH, USERNAME.substring(0, 3));
         validateFilteredUser(USER_NAME_ATTRIBUTE, ENDWITH, USERNAME.substring(4, USERNAME.length()));
+        validateFilteredUserByEmailAddresses(EMAIL_ADDRESSES_ATTRIBUTE, CONTAINS, EMAIL_TYPE_HOME_CLAIM_VALUE);
     }
 
     private void validateFilteredUser(String attributeName, String operator, String attributeValue) throws IOException {
+
         String userResourcePath = getPath() + "?filter=" + attributeName + operator + attributeValue;
         HttpGet request = new HttpGet(userResourcePath);
         request.addHeader(HttpHeaders.AUTHORIZATION, getAuthzHeader());
@@ -325,8 +338,37 @@ public class SCIM2UserTestCase extends ISIntegrationTest {
         assertEquals(userId, this.userId);
     }
 
+    private void validateFilteredUserByEmailAddresses(String attributeName, String operator, String attributeValue)
+            throws IOException {
+
+        String userResourcePath = getPath() + "?filter=" + USER_SYSTEM_SCHEMA + ":" + attributeName + operator
+                + attributeValue;
+        HttpGet request = new HttpGet(userResourcePath);
+        request.addHeader(HttpHeaders.AUTHORIZATION, getAuthzHeader());
+        request.addHeader(HttpHeaders.CONTENT_TYPE, "application/json");
+        request.addHeader(HttpHeaders.ACCEPT, "application/scim+json");
+        HttpResponse response = client.execute(request);
+        assertEquals(response.getStatusLine().getStatusCode(), 200, "User " +
+                "has not been retrieved successfully");
+
+        Object responseObj = JSONValue.parse(EntityUtils.toString(response.getEntity()));
+        EntityUtils.consume(response.getEntity());
+
+        JSONObject userResources = ((JSONObject) ((JSONArray) ((JSONObject) responseObj)
+                .get("Resources")).get(0));
+        JSONArray emailsArray = (JSONArray) ((JSONObject) userResources.get(USER_SYSTEM_SCHEMA)).get(attributeName);
+
+        for (Object email : emailsArray) {
+            if (email.equals(attributeValue)) {
+                return;
+            }
+        }
+        fail();
+    }
+
     @Test(dependsOnMethods = "testFilterUser")
     public void testDeleteUser() throws Exception {
+
         String userResourcePath = getPath() + "/" + userId;
         HttpDelete request = new HttpDelete(userResourcePath);
         request.addHeader(HttpHeaders.AUTHORIZATION, getAuthzHeader());
@@ -380,76 +422,8 @@ public class SCIM2UserTestCase extends ISIntegrationTest {
 
     }
 
-    @Test(dependsOnMethods = "testGetUser")
-    public void testUpdateUserWhenExternalClaimDeleted() throws Exception {
-
-        AutomationContext context = new AutomationContext("IDENTITY", testUserMode);
-        backendURL = context.getContextUrls().getBackEndUrl();
-        loginLogoutClient = new LoginLogoutClient(context);
-        sessionCookie = loginLogoutClient.login();
-        HttpPost postRequest = new HttpPost(getPath());
-        postRequest.addHeader(HttpHeaders.AUTHORIZATION, getAuthzHeader());
-        postRequest.addHeader(HttpHeaders.CONTENT_TYPE, "application/json");
-
-        JSONObject rootObject = new JSONObject();
-
-        JSONArray schemas = new JSONArray();
-        rootObject.put(SCHEMAS_ATTRIBUTE, schemas);
-
-        JSONObject names = new JSONObject();
-        names.put(FAMILY_NAME_ATTRIBUTE, "udaranga");
-        names.put(GIVEN_NAME_ATTRIBUTE, "buddhima");
-
-        rootObject.put(NAME_ATTRIBUTE, names);
-        rootObject.put(USER_NAME_ATTRIBUTE, "wso2is");
-
-        JSONObject emailWork = new JSONObject();
-        emailWork.put(TYPE_PARAM, EMAIL_TYPE_WORK_ATTRIBUTE);
-        emailWork.put(VALUE_PARAM, EMAIL_TYPE_WORK_CLAIM_VALUE);
-
-        JSONObject emailHome = new JSONObject();
-        emailHome.put(TYPE_PARAM, EMAIL_TYPE_HOME_ATTRIBUTE);
-        emailHome.put(VALUE_PARAM, EMAIL_TYPE_HOME_CLAIM_VALUE);
-
-        JSONArray emails = new JSONArray();
-        emails.add(emailWork);
-        emails.add(emailHome);
-
-        rootObject.put(EMAILS_ATTRIBUTE, emails);
-
-        rootObject.put(PASSWORD_ATTRIBUTE, PASSWORD);
-
-        StringEntity entity = new StringEntity(rootObject.toString());
-        postRequest.setEntity(entity);
-        HttpResponse postResponse = client.execute(postRequest);
-        assertEquals(postResponse.getStatusLine().getStatusCode(), 201,
-                "User has not been created in patch process successfully.");
-        Object responseObj = JSONValue.parse(EntityUtils.toString(postResponse.getEntity()));
-        EntityUtils.consume(postResponse.getEntity());
-        String userId = ((JSONObject) responseObj).get(ID_ATTRIBUTE).toString();
-        assertNotNull(userId);
-        String userResourcePath = getPath() + "/" + userId;
-
-        claimMetadataManagementServiceClient = new ClaimMetadataManagementServiceClient(backendURL, sessionCookie);
-        claimMetadataManagementServiceClient.removeExternalClaim("urn:ietf:params:scim:schemas:core:2.0:User",
-                "urn:ietf:params:scim:schemas:core:2.0:User:name.honorificSuffix");
-        HttpPatch request = new HttpPatch(userResourcePath);
-        StringEntity params = new StringEntity("{\"schemas\":[\"urn:ietf:params:scim:api:messages:2.0:PatchOp\"],"
-                + "\"Operations\":[{\"op\":\"replace\",\"path\":\"name\",\"value\":{\"givenName\":\"mahela\","
-                + "\"familyName\":\"jayaxxxx\"}}]}");
-
-        request.setEntity(params);
-        request.addHeader(HttpHeaders.AUTHORIZATION, getAuthzHeader());
-        request.addHeader(HttpHeaders.CONTENT_TYPE, "application/json");
-        HttpResponse response = client.execute(request);
-        assertEquals(response.getStatusLine().getStatusCode(), 200, "User has not been updated successfully.");
-        Object responseObjAfterPatch = JSONValue.parse(EntityUtils.toString(response.getEntity()));
-        EntityUtils.consume(response.getEntity());
-        String updatedGivenName = ((JSONObject) responseObjAfterPatch).get(NAME_ATTRIBUTE).toString();
-        assertTrue(updatedGivenName.contains("mahela"));
-    }
-
     private String getPath() {
+
         if (tenant.equals(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME)) {
             return SERVER_URL + SCIM2_USERS_ENDPOINT;
         } else {
@@ -458,6 +432,7 @@ public class SCIM2UserTestCase extends ISIntegrationTest {
     }
 
     private String getAuthzHeader() {
+
         return "Basic " + Base64.encodeBase64String((adminUsername + ":" + adminPassword).getBytes()).trim();
     }
 }

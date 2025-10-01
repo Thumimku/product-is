@@ -5,13 +5,13 @@
   },
   "user_store.type": "database_unique_id",
 
-  "keystore.primary.type" : "JKS",
+  "keystore.primary.type" : "PKCS12",
   "keystore.userstore_password_encryption": "",
-  "truststore.type" : "JKS",
+  "truststore.type" : "PKCS12",
   "keystore.tenant.type": "JKS",
 
-  "keystore.primary.file_name": "wso2carbon.jks",
-  "truststore.file_name": "client-truststore.jks",
+  "keystore.primary.file_name": "wso2carbon.p12",
+  "truststore.file_name": "client-truststore.p12",
 
   "transport.https.sslHostConfig.properties.certificateVerification": "want",
   "transport.https.sslHostConfig.properties.protocols": "+TLSv1,+TLSv1.1,+TLSv1.2",
@@ -34,7 +34,10 @@
     "scope_menu",
     "identity_admin_advisory_banner_menu",
     "server-roles-mgt_menu",
-    "logging_config_menu"
+    "logging_config_menu",
+    "multitenancy_menu",
+    "resource_browser_menu",
+    "identity_entitlement_menu"
   ],
   "http_access_log.directory": "${carbon.home}/repository/logs",
   "http_access_log.prefix": "http_access_",
@@ -45,6 +48,7 @@
 
   "monitoring.jmx.rmi_server_start": false,
   "product.version" : "${product.version}",
+  "console.product_version.configs.productVersion": "${product.version}",
 
   "transport.http.enabled" : true,
   "transport.https.enabled" : true,
@@ -68,5 +72,15 @@
 
   "default_management_ui.path": "console",
   "legacy_authz_runtime.enable": false,
-  "management_console_deprecation_banner.enable": true
+  "management_console_deprecation_banner.enable": true,
+
+  "console.doc_site_path": "https://is.docs.wso2.com/en/latest",
+
+  "admin_service.deny_list": [
+    "CarbonAppUploader",
+    "WebappAdmin",
+    "FileDownloadService",
+    "FileUploadService",
+    "LoginStatisticsAdmin"
+  ]
 }

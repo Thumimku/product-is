@@ -15,8 +15,8 @@
 #  limitations under the License.
 
 OPENSSL_VERSION=3.2.1
-LIBOQS_VERSION=0.10.0
-OQS_PROVIDER_VERSION=0.6.0
+LIBOQS_VERSION=0.12.0
+OQS_PROVIDER_VERSION=0.8.0
 TCNATIVE_VERSION=1.3.0
 APR_VERSION=1.7.4
 
@@ -110,10 +110,11 @@ install_oqs_provider() {
 install_apr() {
     # Download APR
     cd "$1" \
-        && wget https://dlcdn.apache.org//apr/apr-$APR_VERSION.tar.gz \
-        && tar -xf apr-$APR_VERSION.tar.gz
+        && git clone https://github.com/apache/apr.git
     echo "Installing APR"
-    cd "$1/apr-$APR_VERSION" \
+    cd "$1/apr" \
+        && git checkout $APR_VERSION \
+        && ./buildconf \
         && ./configure --prefix="$2" \
         && make \
         && make install
@@ -138,10 +139,12 @@ install_tomcat_native() {
 
     # Download tcnative
     cd "$1" \
-        && wget https://dlcdn.apache.org/tomcat/tomcat-connectors/native/$TCNATIVE_VERSION/source/tomcat-native-$TCNATIVE_VERSION-src.tar.gz \
-        && tar -xf tomcat-native-$TCNATIVE_VERSION-src.tar.gz
+        && wget https://github.com/apache/tomcat-native/archive/refs/tags/$TCNATIVE_VERSION.tar.gz \
+        && tar -xf $TCNATIVE_VERSION.tar.gz
     echo "Installing tcnative"
-    cd "$1/tomcat-native-$TCNATIVE_VERSION-src/native" \
+    cd "$1/tomcat-native-$TCNATIVE_VERSION/native" \
+        && git clone https://github.com/apache/apr.git \
+        && ./buildconf --with-apr="$1/tomcat-native-$TCNATIVE_VERSION/native/apr" \
         && ./configure "$apr_config" "$ssl" --prefix="$2" \
         && make \
         && make install
@@ -203,7 +206,7 @@ for arg in "$@"; do
 done
 
 # Check for build dependencies
-check_dependencies make cmake wget tar gcc
+check_dependencies make cmake wget tar gcc autoconf
 # Check for Perl on RHEL-based systems
 if [ -f "/etc/redhat-release" ]; then
     check_dependencies perl

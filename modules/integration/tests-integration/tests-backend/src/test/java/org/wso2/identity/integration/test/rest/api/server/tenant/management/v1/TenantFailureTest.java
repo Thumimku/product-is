@@ -26,9 +26,11 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.wso2.carbon.automation.engine.context.TestUserMode;
+import org.wso2.identity.integration.test.rest.api.server.tenant.management.v1.model.TenantResponseModel;
 
 import java.io.IOException;
 
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.core.IsNull.notNullValue;
 
 /**
@@ -37,6 +39,7 @@ import static org.hamcrest.core.IsNull.notNullValue;
 public class TenantFailureTest extends TenantManagementBaseTest {
 
     private String tenantId;
+    private String userId;
 
     public TenantFailureTest() throws Exception {
 
@@ -98,6 +101,80 @@ public class TenantFailureTest extends TenantManagementBaseTest {
         Response response = getResponseOfGet(TENANT_API_BASE_PATH + PATH_SEPARATOR + "random-id" +
                 TENANT_API_OWNER_PATH);
         validateErrorResponse(response, HttpStatus.SC_BAD_REQUEST, "TM-60014", "random-id");
+    }
+
+    @Test void testGetOwnerWithInvalidTenantId() {
+
+        Response response = getResponseOfGet(TENANT_API_BASE_PATH + PATH_SEPARATOR + "random-id" +
+                TENANT_API_OWNER_PATH + PATH_SEPARATOR + "random-id");
+        validateErrorResponse(response, HttpStatus.SC_BAD_REQUEST, "TM-60014", "random-id");
+    }
+
+    @Test
+    public void updateOwnerWithInvalidTenantId() throws IOException {
+
+        String body = readResource("update-owner.json");
+        Response response = getResponseOfPut(TENANT_API_BASE_PATH + PATH_SEPARATOR + "random-id" +
+                TENANT_API_OWNER_PATH + PATH_SEPARATOR + "random-id", body);
+        validateErrorResponse(response, HttpStatus.SC_BAD_REQUEST, "TM-60014", "random-id");
+    }
+
+    @Test
+    public void addTenantWithInvalidClaim() throws IOException {
+
+        Response response = getResponseOfPost(TENANT_API_BASE_PATH, readResource("add-tenant-invalid-claims.json"));
+        validateErrorResponse(response, HttpStatus.SC_PARTIAL_CONTENT, "TM-60021", "Telephone is not in the correct format.");
+    }
+
+    @Test(dependsOnMethods = "addTenantWithInvalidClaim")
+    public void getTenantOwnerWithInvalidOwnerId() {
+
+        Response response = getResponseOfGet(TENANT_API_BASE_PATH + TENANT_DOMAIN_BASE_PATH + PATH_SEPARATOR + "abc3.com");
+
+        TenantResponseModel tenantResponseModel = response.getBody().as(TenantResponseModel.class);
+        tenantId = tenantResponseModel.getId();
+        userId = tenantResponseModel.getOwners().get(0).getId();
+
+        response = getResponseOfGet(TENANT_API_BASE_PATH + PATH_SEPARATOR + tenantId +
+                TENANT_API_OWNER_PATH + PATH_SEPARATOR + "random-id");
+        validateErrorResponse(response, HttpStatus.SC_BAD_REQUEST, "TM-60020", tenantId);
+    }
+
+    @Test(dependsOnMethods = "getTenantOwnerWithInvalidOwnerId")
+    public void updateTenantOwnerWithInvalidOwnerId() throws IOException {
+
+        String body = readResource("update-owner.json");
+        Response response = getResponseOfPut(TENANT_API_BASE_PATH + PATH_SEPARATOR + tenantId +
+                TENANT_API_OWNER_PATH + PATH_SEPARATOR + "random-id", body);
+        validateErrorResponse(response, HttpStatus.SC_BAD_REQUEST, "TM-60020", tenantId);
+    }
+
+    @Test
+    public void testGetTenantsInvalidFilterFormat() {
+
+        Response response = getResponseOfGet(TENANT_API_BASE_PATH + "?filter=invalid format");
+        validateErrorResponse(response, HttpStatus.SC_BAD_REQUEST, "TM-60022");
+    }
+
+    @Test
+    public void testGetTenantsUnsupportedFilterAttribute() {
+
+        Response response = getResponseOfGet(TENANT_API_BASE_PATH + "?filter=username eq mail.com");
+        validateErrorResponse(response, HttpStatus.SC_BAD_REQUEST, "TM-60023", "username");
+    }
+
+    @Test
+    public void testGetTenantsInvalidFilterOperation() {
+
+        Response response = getResponseOfGet(TENANT_API_BASE_PATH + "?filter=domainName invalid_op abc.com");
+        validateErrorResponse(response, HttpStatus.SC_BAD_REQUEST, "TM-60024", "domainName");
+    }
+
+    @Test
+    public void testGetTenantsFilterIllegalDomain() {
+
+        Response response = getResponseOfGet(TENANT_API_BASE_PATH + "?filter=domainName eq abc*");
+        validateErrorResponse(response, HttpStatus.SC_BAD_REQUEST, "TM-60007");
     }
 
 }

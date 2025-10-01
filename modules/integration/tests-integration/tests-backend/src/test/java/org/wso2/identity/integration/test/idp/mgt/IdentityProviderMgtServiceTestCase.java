@@ -47,7 +47,7 @@ public class IdentityProviderMgtServiceTestCase extends ISIntegrationTest {
     private String testIdpName = "TestIDPProvider";
     private String testIdpNameSearch = "SearchTestIDPProviderTest";
     private String updatedTestIdpName = "UpdatedTestIDPProvider";
-    private String testFedAuthName = "OpenIDAuthenticator";
+    private String testFedAuthName = "OpenIDConnectAuthenticator";
 
     //Resident idp default values
     private boolean residentIdpEnable;
@@ -71,6 +71,7 @@ public class IdentityProviderMgtServiceTestCase extends ISIntegrationTest {
         super.init();
         ConfigurationContext configContext = ConfigurationContextFactory.createConfigurationContextFromFileSystem(null, null);
         idpMgtServiceClient = new IdentityProviderMgtServiceClient(sessionCookie, backendURL, configContext);
+        idpMgtServiceClient.deleteIdP("SSO");
     }
 
 
@@ -159,7 +160,7 @@ public class IdentityProviderMgtServiceTestCase extends ISIntegrationTest {
     public void testAddIdp() throws Exception {
         String testIdpDescription = "This is test identity provider";
         String testIdpRealmId = "localhost";
-        String testFedAuthDispName = "openid";
+        String testFedAuthDispName = "openidConnect";
 
         String testFedAuthPropName = "OpenIdUrl";
         String testFedAuthPropValue = "https://testDomain:9853/openid";

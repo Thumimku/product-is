@@ -53,7 +53,7 @@ jobs:
     runs-on: ${{ github.event.inputs.os }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Setup Docker environment
         run: |
           # Get the ID of the workflow from the GitHub API using curl and jq
@@ -124,7 +124,7 @@ jobs:
         if: ${{ always() }}
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: "logs-${{ github.event.inputs.currentVersion }}-${{ github.event.inputs.migratingVersion }}-${{ github.event.inputs.database }}-${{ github.event.inputs.os }}"
@@ -136,7 +136,7 @@ jobs:
     runs-on: ${{ github.event.inputs.os }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Execute Migration Automation Script Ubuntu
         run: |
             chmod +x ${{ github.workspace }}/.github/migration-tester/migration-automation/ubuntu-os/migration-script-ubuntu.sh 
@@ -150,7 +150,7 @@ jobs:
         if: ${{ always() }}
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: "logs-${{ github.event.inputs.currentVersion }}-${{ github.event.inputs.migratingVersion }}-${{ github.event.inputs.database }}-${{ github.event.inputs.os }}"
@@ -172,7 +172,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Create MS SQL Database
         run: |
@@ -204,7 +204,7 @@ jobs:
         if: ${{ always() }}
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: "logs-${{ github.event.inputs.currentVersion }}-${{ github.event.inputs.migratingVersion }}-${{ github.event.inputs.database }}-${{ github.event.inputs.os }}"
@@ -215,7 +215,7 @@ jobs:
     runs-on: ${{ github.event.inputs.os }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Execute Migration Automation Script Mac
         run: |
@@ -229,7 +229,7 @@ jobs:
         if: ${{ always() }}
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: "logs-${{ github.event.inputs.currentVersion }}-${{ github.event.inputs.migratingVersion }}-${{ github.event.inputs.database }}-${{ github.event.inputs.os }}"
@@ -240,7 +240,7 @@ jobs:
     if: ${{ github.event.inputs.database == 'postgres' && github.event.inputs.os == 'macos-latest' }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Set up PostgreSQL
         env:
            PGDATA: /usr/local/var/postgres
@@ -276,7 +276,7 @@ jobs:
         if: ${{ always() }}
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: "logs-${{ github.event.inputs.currentVersion }}-${{ github.event.inputs.migratingVersion }}-${{ github.event.inputs.database }}-${{ github.event.inputs.os }}"
@@ -287,7 +287,7 @@ jobs:
     runs-on: ${{ github.event.inputs.os }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - uses: potatoqualitee/mssqlsuite@v1.7
         with:
@@ -324,7 +324,7 @@ jobs:
         if: ${{ always() }}
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: "logs-${{ github.event.inputs.currentVersion }}-${{ github.event.inputs.migratingVersion }}-${{ github.event.inputs.database }}-${{ github.event.inputs.os }}"
@@ -344,7 +344,7 @@ jobs:
     runs-on: ${{ github.event.inputs.os }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Download Artifacts
         uses: actions/download-artifact@v2
         if: always()

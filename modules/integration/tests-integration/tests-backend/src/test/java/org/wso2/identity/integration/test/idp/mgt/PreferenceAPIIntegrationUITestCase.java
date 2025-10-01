@@ -53,9 +53,13 @@ public class PreferenceAPIIntegrationUITestCase extends OAuth2ServiceAbstractInt
 
     private static final String ENABLE_SELF_REGISTRATION_PROP_KEY = "SelfRegistration.Enable";
     private static final String ENABLE_USERNAME_RECOVERY_PROP_KEY = "Recovery.Notification.Username.Enable";
+    private static final String ENABLE_USERNAME_EMAIL_RECOVERY_PROP_KEY = "Recovery.Notification.Username.Email.Enable";
+    private static final String ENABLE_USERNAME_SMS_RECOVERY_PROP_KEY = "Recovery.Notification.Username.SMS.Enable";
     private static final String ENABLE_PASSWORD_QS_RECOVERY_PROP_KEY = "Recovery.Question.Password.Enable";
     private static final String ENABLE_PASSWORD_NOTIFICATION_RECOVERY_PROP_KEY =
             "Recovery.Notification.Password.Enable";
+    private static final String ENABLE_PASSWORD_EMAIL_OTP_RECOVERY_PROP_KEY =
+            "Recovery.Notification.Password.OTP.SendOTPInEmail";
     private static final String ENABLE_PASSWORD_EMAIL_LINK_RECOVERY_PROP_KEY =
             "Recovery.Notification.Password.emailLink.Enable";
     private static final String ENABLE_PASSWORD_SMS_OTP_RECOVERY_PROP_KEY =
@@ -64,7 +68,7 @@ public class PreferenceAPIIntegrationUITestCase extends OAuth2ServiceAbstractInt
     private static final String RECOVERY_USERNAME_CONTENT = "id=\"usernameRecoverLink\"";
     private static final String RECOVERY_PASSWORD_CONTENT = "id=\"passwordRecoverLink\"";
     private static final String RECOVERY_ENDPOINT_QS_CONTENT = "name=\"recoveryOption\" value=\"SECURITY_QUESTIONS\"";
-    private static final String RECOVERY_ENDPOINT_NOTIFICATION_EMAIL_LINK_CONTENT = "name=\"recoveryOption\" value=\"EMAIL\"";
+    private static final String RECOVERY_ENDPOINT_NOTIFICATION_EMAIL_CONTENT = "name=\"recoveryOption\" value=\"EMAIL\"";
     private static final String RECOVERY_ENDPOINT_NOTIFICATION_SMS_OTP_CONTENT = "name=\"recoveryOption\" value=\"SMSOTP\"";
     private static final String CREATE_ACCOUNT_CONTENT = "id=\"registerLink\"";
     private static final String RECOVERY_ENDPOINT_URL = "/accountrecoveryendpoint/recoveraccountrouter.do";
@@ -129,9 +133,12 @@ public class PreferenceAPIIntegrationUITestCase extends OAuth2ServiceAbstractInt
         updateResidentIDPProperties(superTenantResidentIDP, Map.of(
                 ENABLE_SELF_REGISTRATION_PROP_KEY, "false",
                 ENABLE_USERNAME_RECOVERY_PROP_KEY, "false",
+                ENABLE_USERNAME_EMAIL_RECOVERY_PROP_KEY, "false",
+                ENABLE_USERNAME_SMS_RECOVERY_PROP_KEY, "false",
                 ENABLE_PASSWORD_QS_RECOVERY_PROP_KEY, "false",
                 ENABLE_PASSWORD_NOTIFICATION_RECOVERY_PROP_KEY, "false",
                 ENABLE_PASSWORD_EMAIL_LINK_RECOVERY_PROP_KEY, "false",
+                ENABLE_PASSWORD_EMAIL_OTP_RECOVERY_PROP_KEY, "false",
                 ENABLE_PASSWORD_SMS_OTP_RECOVERY_PROP_KEY, "false"));
     }
 
@@ -152,10 +159,22 @@ public class PreferenceAPIIntegrationUITestCase extends OAuth2ServiceAbstractInt
         Assert.assertTrue(content.contains(CREATE_ACCOUNT_CONTENT));
     }
 
-    @Test(groups = "wso2.is", description = "Check Username recovery Login Page")
-    public void testUsernameRecovery() throws Exception {
+    @Test(groups = "wso2.is", description = "Check Username recovery Login Page while Email Channel is enabled")
+    public void testUsernameRecoveryWithEmail() throws Exception {
 
-        updateResidentIDPProperty(superTenantResidentIDP, ENABLE_USERNAME_RECOVERY_PROP_KEY, "true");
+        updateResidentIDPProperties(superTenantResidentIDP, Map.of(
+                ENABLE_USERNAME_EMAIL_RECOVERY_PROP_KEY, "true",
+                ENABLE_USERNAME_RECOVERY_PROP_KEY, "true"));
+        String content = sendAuthorizeRequest();
+        Assert.assertTrue(content.contains(RECOVERY_USERNAME_CONTENT));
+    }
+
+    @Test(groups = "wso2.is", description = "Check Username recovery Login Page while SMS Channel is enabled")
+    public void testUsernameRecoveryWithSms() throws Exception {
+
+        updateResidentIDPProperties(superTenantResidentIDP, Map.of(
+                ENABLE_USERNAME_SMS_RECOVERY_PROP_KEY, "true",
+                ENABLE_USERNAME_RECOVERY_PROP_KEY, "true"));
         String content = sendAuthorizeRequest();
         Assert.assertTrue(content.contains(RECOVERY_USERNAME_CONTENT));
     }
@@ -194,7 +213,7 @@ public class PreferenceAPIIntegrationUITestCase extends OAuth2ServiceAbstractInt
         updateResidentIDPProperty(superTenantResidentIDP, ENABLE_PASSWORD_QS_RECOVERY_PROP_KEY, "true");
         String content = sendRecoveryRequest();
         Assert.assertTrue(content.contains(RECOVERY_ENDPOINT_QS_CONTENT));
-        Assert.assertFalse(content.contains(RECOVERY_ENDPOINT_NOTIFICATION_EMAIL_LINK_CONTENT));
+        Assert.assertFalse(content.contains(RECOVERY_ENDPOINT_NOTIFICATION_EMAIL_CONTENT));
         Assert.assertFalse(content.contains(RECOVERY_ENDPOINT_NOTIFICATION_SMS_OTP_CONTENT));
     }
 
@@ -207,7 +226,19 @@ public class PreferenceAPIIntegrationUITestCase extends OAuth2ServiceAbstractInt
         String content = sendRecoveryRequest();
         Assert.assertFalse(content.contains(RECOVERY_ENDPOINT_QS_CONTENT));
         Assert.assertFalse(content.contains(RECOVERY_ENDPOINT_NOTIFICATION_SMS_OTP_CONTENT));
-        Assert.assertTrue(content.contains(RECOVERY_ENDPOINT_NOTIFICATION_EMAIL_LINK_CONTENT));
+        Assert.assertTrue(content.contains(RECOVERY_ENDPOINT_NOTIFICATION_EMAIL_CONTENT));
+    }
+
+    @Test(groups = "wso2.is", description = "Check Notification recovery option recovery Page")
+    public void testRecoveryNotificationEmailOTPOnly() throws Exception {
+
+        updateResidentIDPProperties(superTenantResidentIDP, Map.of(
+                ENABLE_PASSWORD_NOTIFICATION_RECOVERY_PROP_KEY, "true",
+                ENABLE_PASSWORD_EMAIL_OTP_RECOVERY_PROP_KEY, "true"));
+        String content = sendRecoveryRequest();
+        Assert.assertFalse(content.contains(RECOVERY_ENDPOINT_QS_CONTENT));
+        Assert.assertFalse(content.contains(RECOVERY_ENDPOINT_NOTIFICATION_SMS_OTP_CONTENT));
+        Assert.assertTrue(content.contains(RECOVERY_ENDPOINT_NOTIFICATION_EMAIL_CONTENT));
     }
 
     @Test(groups = "wso2.is", description = "Check Notification recovery option recovery Page")
@@ -219,7 +250,7 @@ public class PreferenceAPIIntegrationUITestCase extends OAuth2ServiceAbstractInt
                 ENABLE_PASSWORD_NOTIFICATION_RECOVERY_PROP_KEY, "true"));
         String content = sendRecoveryRequest();
         Assert.assertFalse(content.contains(RECOVERY_ENDPOINT_QS_CONTENT));
-        Assert.assertFalse(content.contains(RECOVERY_ENDPOINT_NOTIFICATION_EMAIL_LINK_CONTENT));
+        Assert.assertFalse(content.contains(RECOVERY_ENDPOINT_NOTIFICATION_EMAIL_CONTENT));
         Assert.assertTrue(content.contains(RECOVERY_ENDPOINT_NOTIFICATION_SMS_OTP_CONTENT));
     }
 
